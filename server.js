@@ -10,6 +10,7 @@ var express             = require('express'),
     localStrategy		    = require('passport-local').Strategy;
     bodyParser          = require('body-parser');
 
+
     var facebookAuth = {
       'clientID'        : '1094811472291513', // facebook App ID
       'clientSecret'    : '406845bb5fe83a8c751238ec9544a4f5', // facebook App Secret
@@ -34,6 +35,8 @@ app.use(express.static(path.join(__dirname,'public')));
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
+app.use(express.json());
+
 
 // Passport.js
 
@@ -223,9 +226,6 @@ const handle_Delete = async (req, res) => {
   console.log("Connected successfully to server");
   const db = client.db(dbName);
   const collection = db.collection(collectionName);
-
-  console.log(DOCID);
-
 if (collection) {
   // Delete a single document that matches the filter
   const result = await collection.deleteOne({bookingid:returnbookingid});
@@ -240,18 +240,18 @@ if (collection) {
 }
 };
 
-
+var inputDestination;
 const handle_updataDestination = async (req, res) => {
   await client.connect();
   console.log("Connected successfully to server");
   const db = client.db(dbName);
   const collection = db.collection(collectionName);
 
-  console.log(req.fields.updataDestinationinput);
+  //console.log(req.fields.updataDestinationinput);
 
 if (collection) {
   // Delete a single document that matches the filter
-  let inputDestination=req.fields.updataDestinationinput;
+  //let inputDestination=req.fields.updataDestinationinput;
 
   console.log(collectionName);
 
@@ -269,17 +269,18 @@ if (collection) {
 };
 
 
+var updataDATAinput;
 const handle_updataDATA = async (req, res) => {
   await client.connect();
   console.log("Connected successfully to server");
   const db = client.db(dbName);
   const collection = db.collection(collectionName);
 
-  console.log(req.fields.updataDATAinput);
+  //console.log(req.fields.updataDATAinput);
 
 if (collection) {
   // Delete a single document that matches the filter
-  let updataDATAinput=req.fields.updataDATAinput;
+  //let updataDATAinput=req.fields.updataDATAinput;
 
   console.log(collectionName);
 
@@ -332,7 +333,7 @@ app.get("/Home",isLoggedIn, function (req, res) {
 });
 
 app.get('/create', isLoggedIn, (req, res) => {
-  res.status(200).render('Create', { newbookingid:newbookingid,user: req.user });
+  res.status(200).render('create', { newbookingid:newbookingid,user: req.user });
 });
 
 app.post('/create', isLoggedIn, (req, res) => {
@@ -361,10 +362,12 @@ app.get("/deletedetail",isLoggedIn, function (req, res) {
 });
 
 app.post("/updataDestination",isLoggedIn, function (req, res) {
+  inputDestination=req.fields.updataDestinationinput; 
   handle_updataDestination(req, res, req.query);
 });
 
 app.post("/updataDATA",isLoggedIn, function (req, res) {
+  updataDATAinput=req.fields.updataDATAinput;
   handle_updataDATA(req, res, req.query);
 });
 
@@ -401,12 +404,20 @@ app.get('/api/read/:bookingid',async function (req, res) {
   console.log("user input:"+req.params.bookingid);
   const result = await handle_Details_test(req, res, req.query);
   res.send(result);
-
 });
+// curl -X GET http://localhost:8099/api/read/7
 
-///post
-app.post('/api/uploaddata/:bookingid', async (req,res) => { //async programming way
-  if (req.params.bookingid) {
+
+
+///post all new doc
+app.post('/api/uploaddata/:Destination/:bookingData', async (req,res) => { //async programming way
+  try {
+  //console.log("ok1");
+
+  console.log('Received Destination:' , req.params.Destination);
+  console.log('Received BookingData:', req.params.bookingData);
+
+  if (req.params.Destination) {
       console.log(req.body)
   await client.connect();
   console.log("Connected successfully to server");
@@ -414,84 +425,56 @@ app.post('/api/uploaddata/:bookingid', async (req,res) => { //async programming 
     newbookingid = getRandomInt(1000);
     let newDoc = {
 
-      userid: req.user.id,
+      userid: null,
       bookingid:newbookingid,
-      Destination: req.fields.Destination,
-      bookingData: req.fields.bookingData
-
+      Destination: req.params.Destination,
+      bookingData: req.params.bookingData
+//
     };
+
+    console.log("ok2");
     if (req.files.filetoupload && req.files.filetoupload.size > 0) {
         const data = await fsPromises.readFile(req.files.filetoupload.path);
         newDoc.photo = Buffer.from(data).toString('base64');}
   await insertDocument(db, newDoc);
     res.status(200).json({"Successfully inserted":newDoc}).end();
   } else {
-      res.status(500).json({"error": "missing bookingid"});
+     res.status(500).json({"error": "missing Destination"});
   }
-})
-// curl -X POST -H "Content-Type: application/json" --data '{"Destination":"HKG","bookingData":"12/12/2024"}' localhost:8099/api/uploaddata/HKG
-// curl -X POST -F 'bookingid=test01' -F "bookingid=test01" -F "mobile=00000003" -F "filetoupload=@/home/developer/Pictures/robot.jpeg" localhost:8099/api/uploaddata/test01
-
-
-
-app.put('/api/updata/:bookingid', async (req,res) => {
-  if (req.params.bookingid) {
-      console.log(req.body)
-  let criteria = {};
-      criteria['bookingid'] = req.params.bookingid;
-    await client.connect();
-    console.log("Connected successfully to server");
-      const db = client.db(dbName);
-      let updateData = {
-          bookingid: req.fields.bookingid || req.params.bookingid,
-          Destination: req.fields.Destination,
-      };
-      if (req.files.filetoupload && req.files.filetoupload.size > 0) {
-          const data = await fsPromises.readFile(req.files.filetoupload.path);
-          updateData.photo = Buffer.from(data).toString('base64');
-      }
-      const results = await updateDocument(db, criteria, updateData);
-      res.status(200).json(results).end();
-  } else {
-      res.status(500).json({"error": "missing bookingid"});
-  }
-})
-// curl -X PUT -H "Content-Type: application/json" --data '{"Destination":"ANC"}' localhost:8099/api/updata/885
-// curl -X PUT -F "Destination":"ANC" localhost:8099/api/updata/test01
-
-
-
-
-
-
-const handle_Delete_api = async (req, res) => {
-  await client.connect();
-  console.log("Connected successfully to server");
-  const db = client.db(dbName);
-  const collection = db.collection(collectionName);
-
-  console.log(DOCID);
-
-if (collection) {
-  // Delete a single document that matches the filter
-  const result = await collection.deleteOne({bookingid:returnbookingid});
-
-  if (result.deletedCount === 1) {
-      console.log("Document deleted successfully");
-  } else {
-      console.log("Document not found or not deleted");
-  }
-} else {
-  console.log("Collection not found");
 }
-};
+catch (error) {
+console.error('Error processing request:', error);
+res.status(500).json({ error: 'Internal server error' });
+}})
+//)
 
+// curl -X POST http://localhost:8099/api/uploaddata/HKG/2024
+
+// change Destination
+app.put('/api/updata/Destination/:bookingid/:updataDestinationinput', async (req,res) => {
+  returnbookingid = parseInt(req.params.bookingid)
+  inputDestination = String(req.params.updataDestinationinput)
+  handle_updataDestination(req, res, req.query);
+})
+// curl -X PUT http://localhost:8099/api/updata/Destination/810/HKG
+
+// change Date
+app.put('/api/updata/Date/:bookingid/:updataDATAinput', async (req,res) => {
+  returnbookingid = parseInt(req.params.bookingid)
+  updataDATAinput=String(req.params.updataDATAinput);
+  handle_updataDATA(req, res, req.query);
+})
+// curl -X PUT http://localhost:8099/api/updata/Date/810/2024
+
+// delete record
 app.delete("/api/deletedetail/:bookingid", function (req, res) {
-  //handle_Delete_api(req, res, req.query);
   console.log("Connected successfully to server");
+  returnbookingid = parseInt(req.params.bookingid);
+  console.log(returnbookingid);
+  handle_Delete(req, res, req.query);
+  
 });
-// curl -X DELETE localhost:8099/api/booking/test06s
-
+// curl -X DELETE http://localhost:8099/api/deletedetail/754
 
 // gate
 const port = process.env.PORT || 8099;
