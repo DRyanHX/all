@@ -14,7 +14,7 @@ var express             = require('express'),
     var facebookAuth = {
       'clientID'        : '1094811472291513', // facebook App ID
       'clientSecret'    : '406845bb5fe83a8c751238ec9544a4f5', // facebook App Secret
-      'callbackURL'     : 'http://localhost:8099/auth/facebook/callback'
+      'callbackURL'     : 'https://flight-eexs.onrender.com/auth/facebook/call-back'
 };
   var user = {};
   var { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
