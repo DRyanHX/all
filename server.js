@@ -332,11 +332,11 @@ app.get("/Home",isLoggedIn, function (req, res) {
   res.status(200).render('Home', { user: req.user });
 });
 
-app.get('/create', isLoggedIn, (req, res) => {
+app.get('/Create', isLoggedIn, (req, res) => {
   res.status(200).render('create', { newbookingid:newbookingid,user: req.user });
 });
 
-app.post('/create', isLoggedIn, (req, res) => {
+app.post('/Create', isLoggedIn, (req, res) => {
   handle_Create(req, res, { user: req.user });
 });
 
