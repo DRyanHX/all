@@ -333,7 +333,7 @@ app.get("/Home",isLoggedIn, function (req, res) {
 });
 
 app.get('/Create', isLoggedIn, (req, res) => {
-  res.status(200).render('create', { newbookingid:newbookingid,user: req.user });
+  res.status(200).render('Create', { newbookingid:newbookingid,user: req.user });
 });
 
 app.post('/Create', isLoggedIn, (req, res) => {
